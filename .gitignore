@@ -1,0 +1,4 @@
+# Root .gitignore
+.DS_Store
+*.log
+.env
