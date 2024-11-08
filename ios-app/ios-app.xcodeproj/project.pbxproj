@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		5EB8B1592CDEBFB500BFEE0A /* SiriWaveView in Frameworks */ = {isa = PBXBuildFile; productRef = 5EB8B1582CDEBFB500BFEE0A /* SiriWaveView */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		5EA4BBE92CCBF0DE00225E61 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -29,9 +33,22 @@
 		5EA4BBF22CCBF0DF00225E61 /* ios-appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ios-appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		5EB8B15B2CDEC6E600BFEE0A /* Exceptions for "ios-app" folder in "ios-app" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 5EA4BBD72CCBF0DE00225E61 /* ios-app */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5EA4BBDA2CCBF0DE00225E61 /* ios-app */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5EB8B15B2CDEC6E600BFEE0A /* Exceptions for "ios-app" folder in "ios-app" target */,
+			);
 			path = "ios-app";
 			sourceTree = "<group>";
 		};
@@ -45,6 +62,16 @@
 			path = "ios-appUITests";
 			sourceTree = "<group>";
 		};
+		5EB8B1452CDEB13E00BFEE0A /* Features */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Features;
+			sourceTree = "<group>";
+		};
+		5EB8B1512CDEB28400BFEE0A /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,6 +79,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5EB8B1592CDEBFB500BFEE0A /* SiriWaveView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -79,6 +107,9 @@
 				5EA4BBEB2CCBF0DE00225E61 /* ios-appTests */,
 				5EA4BBF52CCBF0DF00225E61 /* ios-appUITests */,
 				5EA4BBD92CCBF0DE00225E61 /* Products */,
+				5EB8B1452CDEB13E00BFEE0A /* Features */,
+				5EB8B1512CDEB28400BFEE0A /* Shared */,
+				5EB8B1572CDEBFB500BFEE0A /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -90,6 +121,13 @@
 				5EA4BBF22CCBF0DF00225E61 /* ios-appUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		5EB8B1572CDEBFB500BFEE0A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -109,9 +147,12 @@
 			);
 			fileSystemSynchronizedGroups = (
 				5EA4BBDA2CCBF0DE00225E61 /* ios-app */,
+				5EB8B1452CDEB13E00BFEE0A /* Features */,
+				5EB8B1512CDEB28400BFEE0A /* Shared */,
 			);
 			name = "ios-app";
 			packageProductDependencies = (
+				5EB8B1582CDEBFB500BFEE0A /* SiriWaveView */,
 			);
 			productName = "ios-app";
 			productReference = 5EA4BBD82CCBF0DE00225E61 /* ios-app.app */;
@@ -195,6 +236,9 @@
 			);
 			mainGroup = 5EA4BBCF2CCBF0DE00225E61;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				5EB8B1562CDEBE2500BFEE0A /* XCRemoteSwiftPackageReference "SiriWaveView" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5EA4BBD92CCBF0DE00225E61 /* Products */;
 			projectDirPath = "";
@@ -396,8 +440,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"ios-app/Preview Content\"";
+				DEVELOPMENT_TEAM = XGC8GLZYQ5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "ios-app/Info.plist";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to record audio.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -424,8 +471,11 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"ios-app/Preview Content\"";
+				DEVELOPMENT_TEAM = XGC8GLZYQ5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "ios-app/Info.plist";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need access to record audio.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -552,6 +602,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		5EB8B1562CDEBE2500BFEE0A /* XCRemoteSwiftPackageReference "SiriWaveView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/alfianlosari/SiriWaveView";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5EB8B1582CDEBFB500BFEE0A /* SiriWaveView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5EB8B1562CDEBE2500BFEE0A /* XCRemoteSwiftPackageReference "SiriWaveView" */;
+			productName = SiriWaveView;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 5EA4BBD02CCBF0DE00225E61 /* Project object */;
 }
