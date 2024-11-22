@@ -144,7 +144,7 @@ struct RecordingView: View {
                             Spacer()
                             
                             HStack(spacing: 16) {
-                                if recorder.isUploading {
+                                if recorder.uploadingFiles.contains(recording) {
                                     ProgressView()
                                 } else {
                                     Button(action: {
@@ -194,6 +194,11 @@ struct RecordingView: View {
                 }
             } message: {
                 Text("Are you sure you want to delete this recording?")
+            }
+            .alert("Upload Successful", isPresented: $recorder.showUploadSuccess) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(recorder.uploadResponse)
             }
         }
     }

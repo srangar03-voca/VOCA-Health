@@ -12,11 +12,13 @@ class AudioRecorderViewModel: NSObject, ObservableObject {
     @Published var isRecording = false
     @Published var recordings: [URL] = []
     @Published var currentPower: Double = 0.0
-    @Published var isUploading = false
+    @Published var uploadingFiles: Set<URL> = []
     @Published var currentlyPlayingURL: URL?
     @Published var isPlaying = false
     @Published var currentTime: TimeInterval = 0
     @Published var duration: TimeInterval = 0
+    @Published var uploadResponse: String = ""
+    @Published var showUploadSuccess = false
     
     var audioRecorder: AVAudioRecorder?
     var audioPlayer: AVAudioPlayer?
@@ -90,13 +92,13 @@ class AudioRecorderViewModel: NSObject, ObservableObject {
         request.httpBody = body
         
         DispatchQueue.main.async {
-            self.isUploading = true
+            self.uploadingFiles.insert(url)
         }
         
         do {
             defer {
                 DispatchQueue.main.async {
-                    self.isUploading = false
+                    self.uploadingFiles.remove(url)
                 }
             }
             
@@ -108,7 +110,10 @@ class AudioRecorderViewModel: NSObject, ObservableObject {
             
             if httpResponse.statusCode == 200 {
                 let responseString = String(data: data, encoding: .utf8) ?? ""
-                print("Upload successful: \(responseString)")
+                DispatchQueue.main.async {
+                    self.uploadResponse = responseString
+                    self.showUploadSuccess = true
+                }
             } else {
                 throw NSError(domain: "AudioUpload", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Upload failed with status code: \(httpResponse.statusCode)"])
             }
