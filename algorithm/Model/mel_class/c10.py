@@ -1,7 +1,7 @@
 import os
 import librosa
 import numpy as np
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.metrics import (
     classification_report, confusion_matrix, f1_score, accuracy_score,
     roc_curve, auc, precision_recall_curve
@@ -10,8 +10,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import cv2
 import warnings
-warnings.filterwarnings("ignore")
 import xgboost as xgb
+
+warnings.filterwarnings("ignore")
 
 # Augmentation functions
 def add_noise(y, noise_factor=0.02):
@@ -82,10 +83,19 @@ disorder_count = len([label for label in original_labels if label == 1])
 augmented_normal_count = len([label for label in augmented_labels if label == 0])
 augmented_disorder_count = len([label for label in augmented_labels if label == 1])
 
-print(f"Data before augmentation: Normal = {normal_count}, Disorder = {disorder_count}")
-print(f"Data after augmentation: Normal = {augmented_normal_count}, Disorder = {augmented_disorder_count}")
+print("\n### Data Summary ###")
+print(f"Data Before Augmentation: Normal = {normal_count}, Disorder = {disorder_count}")
+print(f"Data After Augmentation: Normal = {augmented_normal_count}, Disorder = {augmented_disorder_count}")
 
-# Implement Stratified K-Fold Cross-Validation
+# Split the dataset into training+validation and test sets
+X_train_val, X_test, y_train_val, y_test = train_test_split(
+    X_augmented, y_augmented, test_size=0.2, stratify=y_augmented, random_state=42
+)
+
+print(f"Training+Validation Set: {len(X_train_val)} samples")
+print(f"Test Set: {len(X_test)} samples")
+
+# Implement Stratified K-Fold Cross-Validation on training+validation set
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 accuracy_scores = []
@@ -98,20 +108,20 @@ all_y_true = []
 all_y_pred = []
 all_y_proba = []
 
-for fold, (train_index, test_index) in enumerate(skf.split(X_augmented, y_augmented)):
+for fold, (train_index, val_index) in enumerate(skf.split(X_train_val, y_train_val)):
     print(f"\nFold {fold + 1}")
-    X_train_fold, X_test_fold = X_augmented[train_index], X_augmented[test_index]
-    y_train_fold, y_test_fold = y_augmented[train_index], y_augmented[test_index]
+    X_train_fold, X_val_fold = X_train_val[train_index], X_train_val[val_index]
+    y_train_fold, y_val_fold = y_train_val[train_index], y_train_val[val_index]
 
-    # Normalize features based on training data
+    # Normalize features within the fold
     mean = np.mean(X_train_fold, axis=0)
     std = np.std(X_train_fold, axis=0)
     X_train_fold = (X_train_fold - mean) / std
-    X_test_fold = (X_test_fold - mean) / std
+    X_val_fold = (X_val_fold - mean) / std
 
     # Convert data into DMatrix for XGBoost
     dtrain = xgb.DMatrix(X_train_fold, label=y_train_fold)
-    dtest = xgb.DMatrix(X_test_fold, label=y_test_fold)
+    dval = xgb.DMatrix(X_val_fold, label=y_val_fold)
 
     # Set parameters
     params = {
@@ -123,33 +133,30 @@ for fold, (train_index, test_index) in enumerate(skf.split(X_augmented, y_augmen
         'verbosity': 0
     }
 
-    # Evaluation list
-    evals = [(dtrain, 'train'), (dtest, 'eval')]
-
     # Train the model
     num_rounds = 100
     evals_result = {}
     model = xgb.train(
-        params, dtrain, num_rounds, evals=evals,
+        params, dtrain, num_rounds, evals=[(dtrain, 'train'), (dval, 'eval')],
         early_stopping_rounds=10, evals_result=evals_result, verbose_eval=False
     )
 
     # Record training results
     training_results.append(evals_result)
 
-    # Predict on test data
-    y_pred_proba = model.predict(dtest)
-    y_pred = (y_pred_proba > 0.5).astype(int)
+    # Predict on validation set
+    y_val_pred_proba = model.predict(dval)
+    y_val_pred = (y_val_pred_proba > 0.5).astype(int)
 
-    # Collect predictions and true labels
-    all_y_true.extend(y_test_fold)
-    all_y_pred.extend(y_pred)
-    all_y_proba.extend(y_pred_proba)
+    # Collect predictions and true labels for validation
+    all_y_true.extend(y_val_fold)
+    all_y_pred.extend(y_val_pred)
+    all_y_proba.extend(y_val_pred_proba)
 
-    # Calculate metrics
-    accuracy = accuracy_score(y_test_fold, y_pred) * 100
-    f1 = f1_score(y_test_fold, y_pred)
-    conf_matrix = confusion_matrix(y_test_fold, y_pred)
+    # Calculate metrics for the fold
+    accuracy = accuracy_score(y_val_fold, y_val_pred) * 100
+    f1 = f1_score(y_val_fold, y_val_pred)
+    conf_matrix = confusion_matrix(y_val_fold, y_val_pred)
 
     accuracy_scores.append(accuracy)
     f1_scores.append(f1)
@@ -157,80 +164,69 @@ for fold, (train_index, test_index) in enumerate(skf.split(X_augmented, y_augmen
 
     print(f"Fold {fold + 1} Accuracy: {accuracy:.2f}%")
     print(f"Fold {fold + 1} F1 Score: {f1:.4f}")
-    print(f"Fold {fold + 1} Confusion Matrix:\n{conf_matrix}")
 
-# Convert lists to numpy arrays
-all_y_true = np.array(all_y_true)
-all_y_pred = np.array(all_y_pred)
-all_y_proba = np.array(all_y_proba)
-
-# Compute overall metrics
-overall_accuracy = accuracy_score(all_y_true, all_y_pred) * 100
-overall_f1 = f1_score(all_y_true, all_y_pred)
+# Plot Aggregated Confusion Matrix for Validation Set
 overall_conf_matrix = confusion_matrix(all_y_true, all_y_pred)
-
-print(f"\nOverall Accuracy: {overall_accuracy:.2f}%")
-print(f"Overall F1 Score: {overall_f1:.4f}")
-
-# Classification Report
-print("\nClassification Report:")
-print(classification_report(all_y_true, all_y_pred, target_names=['Normal', 'Disorder']))
-
-# Plot Aggregated Confusion Matrix
 plt.figure(figsize=(6, 4))
 sns.heatmap(
     overall_conf_matrix, annot=True, fmt="d", cmap="Blues",
     xticklabels=['Normal', 'Disorder'], yticklabels=['Normal', 'Disorder']
 )
-plt.title("Aggregated Confusion Matrix")
+plt.title("Aggregated Confusion Matrix - Validation Set")
 plt.xlabel("Predicted Label")
 plt.ylabel("True Label")
 plt.show()
 
-# Plot ROC Curve
-fpr, tpr, thresholds = roc_curve(all_y_true, all_y_proba)
-roc_auc = auc(fpr, tpr)
+# Train final model on the entire training+validation set
+X_train_val_normalized = (X_train_val - np.mean(X_train_val, axis=0)) / np.std(X_train_val, axis=0)
+dtrain_final = xgb.DMatrix(X_train_val_normalized, label=y_train_val)
+final_model = xgb.train(params, dtrain_final, num_rounds)
 
+# Evaluate on the test set
+X_test_normalized = (X_test - np.mean(X_train_val, axis=0)) / np.std(X_train_val, axis=0)
+dtest = xgb.DMatrix(X_test_normalized)
+y_test_pred_proba = final_model.predict(dtest)
+y_test_pred = (y_test_pred_proba > 0.5).astype(int)
+
+# Compute metrics on the test set
+test_accuracy = accuracy_score(y_test, y_test_pred) * 100
+test_f1 = f1_score(y_test, y_test_pred)
+test_conf_matrix = confusion_matrix(y_test, y_test_pred)
+
+print(f"\n### Test Set Results ###")
+print(f"Test Set Accuracy: {test_accuracy:.2f}%")
+print(f"Test Set F1 Score: {test_f1:.4f}")
+print(f"Test Set Confusion Matrix:\n{test_conf_matrix}")
+
+# Plot Confusion Matrix for Test Set
+plt.figure(figsize=(6, 4))
+sns.heatmap(
+    test_conf_matrix, annot=True, fmt="d", cmap="Blues",
+    xticklabels=['Normal', 'Disorder'], yticklabels=['Normal', 'Disorder']
+)
+plt.title("Confusion Matrix - Test Set")
+plt.xlabel("Predicted Label")
+plt.ylabel("True Label")
+plt.show()
+
+# Plot ROC Curve for Test Set
+fpr, tpr, _ = roc_curve(y_test, y_test_pred_proba)
+roc_auc = auc(fpr, tpr)
 plt.figure(figsize=(8, 6))
 plt.plot(fpr, tpr, label=f'ROC Curve (area = {roc_auc:.2f})')
-plt.plot([0, 1], [0, 1], 'k--')  # Diagonal line
-plt.xlim([0.0, 1.0])
-plt.ylim([0.0, 1.05])
+plt.plot([0, 1], [0, 1], 'k--')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Receiver Operating Characteristic (ROC) Curve')
+plt.title('ROC Curve - Test Set')
 plt.legend(loc="lower right")
 plt.show()
 
-# Plot Precision-Recall Curve
-precision, recall, thresholds = precision_recall_curve(all_y_true, all_y_proba)
+# Plot Precision-Recall Curve for Test Set
+precision, recall, _ = precision_recall_curve(y_test, y_test_pred_proba)
 plt.figure(figsize=(8, 6))
 plt.plot(recall, precision, label='Precision-Recall Curve')
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.title('Precision-Recall Curve')
+plt.title('Precision-Recall Curve - Test Set')
 plt.legend(loc="lower left")
-plt.show()
-
-# Plot Training and Validation Metrics for the Last Fold (as an example)
-evals_result = training_results[-1]
-epochs = len(evals_result['train']['logloss'])
-x_axis = range(epochs)
-
-# Plot log loss
-plt.figure(figsize=(10, 5))
-plt.plot(x_axis, evals_result['train']['logloss'], label='Train')
-plt.plot(x_axis, evals_result['eval']['logloss'], label='Validation')
-plt.legend()
-plt.ylabel('Log Loss')
-plt.title('XGBoost Log Loss - Last Fold')
-plt.show()
-
-# Plot classification error
-plt.figure(figsize=(10, 5))
-plt.plot(x_axis, evals_result['train']['error'], label='Train')
-plt.plot(x_axis, evals_result['eval']['error'], label='Validation')
-plt.legend()
-plt.ylabel('Classification Error')
-plt.title('XGBoost Classification Error - Last Fold')
 plt.show()
